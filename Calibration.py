@@ -5,8 +5,8 @@ import glob
 import sys
 import pickle
 import matplotlib
-# TODO: matplotlib.use('macosx', force=True)  # does not supports all features on macos environments
-matplotlib.use('TKAgg', force=True)   # slow but stable on macosx environments
+matplotlib.use('macosx', force=True)  # does not supports all features on macos environments
+#matplotlib.use('TKAgg', force=True)   # slow but stable on macosx environments
 import matplotlib.pyplot as plt
 
 
