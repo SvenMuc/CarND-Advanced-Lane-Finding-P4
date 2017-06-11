@@ -2,8 +2,8 @@ import numpy as np
 import cv2
 import sys
 import matplotlib
-matplotlib.use('macosx', force=True)  # does not supports all features on macos environments
-#matplotlib.use('TKAgg', force=True)   # slow but stable on macosx environments
+#matplotlib.use('macosx', force=True)  # does not supports all features on macos environments
+matplotlib.use('TKAgg', force=True)   # slow but stable on macosx environments
 import matplotlib.pyplot as plt
 from moviepy.editor import VideoFileClip
 from Calibration import *
@@ -31,6 +31,7 @@ class CoreImageProcessing:
         fig.tight_layout()
         ax.imshow(image, cmap=cmap)
         ax.set_title(title)
+        ax.axis('off')
 
         if show:
             plt.show()
@@ -58,7 +59,7 @@ class CoreImageProcessing:
 
         if fig_title != '':
             fig.suptitle(fig_title)
-            plt.subplots_adjust(left=0.03, right=0.99, top=0.92, bottom=0.01)
+            plt.subplots_adjust(left=0.01, right=0.99, top=0.92, bottom=0.01, wspace=0.01, hspace=0.15)
 
         if rows == 1 or nb_images_per_row == 1:
             # plot single row
@@ -69,6 +70,7 @@ class CoreImageProcessing:
                     ax.imshow(images[i], cmap=cmaps[i])
 
                 ax.set_title(titles[i])
+                ax.axis('off')
         else:
             # plot multiple rows
             idx = 0
@@ -80,6 +82,7 @@ class CoreImageProcessing:
                         axarr[r][c].imshow(images[idx], cmap=cmaps[idx])
 
                     axarr[r][c].set_title(titles[idx])
+                    axarr[r][c].axis('off')
                     idx += 1
 
         if show:
@@ -194,7 +197,7 @@ class CoreImageProcessing:
         :return: Returns a thresholded direction binary image.
         """
 
-        angles = self.direction_threshold(gradient_x, gradient_y)
+        angles = self.direction(gradient_x, gradient_y)
         binary = np.zeros_like(angles)
         binary[(angles >= threshold[0]) & (angles <= threshold[1])] = 1
 
@@ -259,24 +262,44 @@ def test_preprocessing_pipeline(img_rgb, plot_intermediate_results=False):
     threshold_l = (150, 255)                 # Threshold for L channel [0..255]
     threshold_s = (100, 255)                 # Threshold for S channel [0..255]
 
-    sobel_kernel = 9                         # Sobel kernel size [3..21]
-
+    sobel_kernel_rgb = 13                    # Sobel kernel size, odd number [3..31] for RGB image
     threshold_r_gradient_x = (25, 170)       # Threshold for R channel x-gradients [0..255]
-    threshold_g_gradient_x = (50, 150)       # Threshold for G channel x-gradients [0..255]
-    threshold_b_gradient_x = (30, 170)       # Threshold for B channel x-gradients [0..255]
-    threshold_r_gradient_y = (30, 170)       # Threshold for R channel y-gradients [0..255]
+    threshold_g_gradient_x = (30, 170)       # Threshold for G channel x-gradients [0..255]
+    threshold_b_gradient_x = (20, 150)       # Threshold for B channel x-gradients [0..255]
+    threshold_r_gradient_y = (25, 170)       # Threshold for R channel y-gradients [0..255]
     threshold_g_gradient_y = (30, 170)       # Threshold for G channel y-gradients [0..255]
-    threshold_b_gradient_y = (30, 170)       # Threshold for B channel y-gradients [0..255]
+    threshold_b_gradient_y = (30, 100)       # Threshold for B channel y-gradients [0..255]
 
+    sobel_kernel_hls = 15                    # Sobel kernel size, odd number [3..31] for HLS image
     threshold_h_gradient_x = (5, 10)         # Threshold for H channel x-gradients [0..255]
-    threshold_l_gradient_x = (50, 170)       # Threshold for S channel x-gradients [0..255]
-    threshold_s_gradient_x = (50, 170)       # Threshold for L channel x-gradients [0..255]
+    threshold_l_gradient_x = (35, 170)       # Threshold for S channel x-gradients [0..255]
+    threshold_s_gradient_x = (30, 170)       # Threshold for L channel x-gradients [0..255]
     threshold_h_gradient_y = (5, 10)         # Threshold for H channel y-gradients [0..255]
     threshold_l_gradient_y = (80, 200)       # Threshold for S channel y-gradients [0..255]
-    threshold_s_gradient_y = (75, 220)       # Threshold for L channel y-gradients [0..255]
+    threshold_s_gradient_y = (40, 150)       # Threshold for L channel y-gradients [0..255]
 
-    threshold_magnitude = (70, 200)          # Threshold for magnitude of x-/y-gradients [0..255]
-    threshold_direction = (0.85, 1.08)       # Threshold for direction absolute x-/y-gradients [0..np.pi/2.]
+    sobel_kernel_gray = 7                    # Sobel kernel size, odd number [3..31] for gray image
+    threshold_gray_gradient_x = (25, 170)    # Threshold for gray image y-gradients [0..255]
+    threshold_gray_gradient_y = (25, 170)    # Threshold for gray image y-gradients [0..255]
+
+    threshold_r_magnitude = (25, 200)        # Threshold for R channel magnitude of x-/y-gradients [0..255]
+    threshold_g_magnitude = (70, 200)        # Threshold for G channel magnitude of x-/y-gradients [0..255]
+    threshold_b_magnitude = (35, 200)        # Threshold for B channel magnitude of x-/y-gradients [0..255]
+    threshold_h_magnitude = (70, 200)        # Threshold for H channel magnitude of x-/y-gradients [0..255]
+    threshold_l_magnitude = (70, 200)        # Threshold for L channel magnitude of x-/y-gradients [0..255]
+    threshold_s_magnitude = (80, 200)        # Threshold for S channel magnitude of x-/y-gradients [0..255]
+    threshold_gray_magnitude = (25, 200)     # Threshold for gray image magnitude of x-/y-gradients [0..255] --> 30
+
+    threshold_r_direction = (0.85, 1.08)     # Threshold for R channel direction absolute x-/y-gradients [0..np.pi/2.]
+    threshold_g_direction = (0.85, 1.08)     # Threshold for G channel direction absolute x-/y-gradients [0..np.pi/2.]
+    threshold_b_direction = (0.85, 1.08)     # Threshold for B channel direction absolute x-/y-gradients [0..np.pi/2.]
+    threshold_h_direction = (0.60, 1.08)     # Threshold for H channel direction absolute x-/y-gradients [0..np.pi/2.]
+    threshold_l_direction = (0.85, 1.08)     # Threshold for L channel direction absolute x-/y-gradients [0..np.pi/2.]
+    threshold_s_direction = (0.85, 1.08)     # Threshold for S channel direction absolute x-/y-gradients [0..np.pi/2.]
+    threshold_gray_direction = (0.8, 1.1)    # Threshold for gray image direction absolute x-/y-gradients [0..np.pi/2.]
+
+    # -----------------------------------------------------------------------
+    # RGB and HLS color thresholding
 
     # separate RGB and HLS channels
     r_channel = img_rgb[:, :, 0]
@@ -302,71 +325,286 @@ def test_preprocessing_pipeline(img_rgb, plot_intermediate_results=False):
     img_binary_s = cip.threshold_image_channel(s_channel, threshold_s)
 
     if plot_intermediate_results:
-        cip.show_images(figsize=(16, 9), rows=3, fig_title='Image Channel Thresholding',
-                        images=[r_channel, img_binary_r, h_channel, img_binary_h,
-                                g_channel, img_binary_g, l_channel, img_binary_l,
-                                b_channel, img_binary_b, s_channel, img_binary_s],
+        # cip.show_images(figsize=(16, 9), rows=3, fig_title='Image Channel Thresholding',
+        #                 images=[r_channel, img_binary_r, h_channel, img_binary_h,
+        #                         g_channel, img_binary_g, l_channel, img_binary_l,
+        #                         b_channel, img_binary_b, s_channel, img_binary_s],
+        #                 titles=['Red', 'Thresholded Red {:}'.format(threshold_r),
+        #                         'Hue', 'Thresholded Hue {:}'.format(threshold_h),
+        #                         'Green', 'Thresholded Green {:}'.format(threshold_g),
+        #                         'Lightness', 'Thresholded Lightness {:}'.format(threshold_l),
+        #                         'Blue', 'Thresholded Blue {:}'.format(threshold_b),
+        #                         'Saturation', 'Thresholded Saturation {:}'.format(threshold_s)],
+        #                 cmaps=['gray', 'gray', 'gray', 'gray', 'gray', 'gray', 'gray', 'gray', 'gray', 'gray', 'gray', 'gray'])
+
+        cip.show_images(figsize=(10, 9), rows=3, fig_title='Red, Blue, Saturation Thresholding',
+                        images=[r_channel, img_binary_r,
+                                b_channel, img_binary_b,
+                                s_channel, img_binary_s,],
                         titles=['Red', 'Thresholded Red {:}'.format(threshold_r),
-                                'Hue', 'Thresholded Hue {:}'.format(threshold_h),
-                                'Green', 'Thresholded Green {:}'.format(threshold_g),
-                                'Lightness', 'Thresholded Lightness  {:}'.format(threshold_l),
                                 'Blue', 'Thresholded Blue {:}'.format(threshold_b),
                                 'Saturation', 'Thresholded Saturation {:}'.format(threshold_s)],
-                        cmaps=['gray', 'gray', 'gray', 'gray', 'gray', 'gray', 'gray', 'gray', 'gray', 'gray', 'gray', 'gray'])
+                        cmaps=['gray', 'gray', 'gray', 'gray', 'gray', 'gray'])
 
-    # combine binary image channels (2 channels)
-    # img_rb_binary_3c = np.dstack((img_binary_r, np.zeros_like(img_binary_r), img_binary_b))
-    # img_rh_binary_3c = np.dstack((img_binary_r, np.zeros_like(img_binary_r), img_binary_h))
-    # img_rs_binary_3c = np.dstack((img_binary_r, np.zeros_like(img_binary_r), img_binary_s))
-    # img_bh_binary_3c = np.dstack((img_binary_b, np.zeros_like(img_binary_r), img_binary_h))
-    # img_bs_binary_3c = np.dstack((img_binary_b, np.zeros_like(img_binary_r), img_binary_s))
-    # img_hs_binary_3c = np.dstack((img_binary_h, np.zeros_like(img_binary_r), img_binary_s))
-    #
-    # img_rb_binary_3c[img_rb_binary_3c == 1] = 255
-    # img_rh_binary_3c[img_rh_binary_3c == 1] = 255
-    # img_rs_binary_3c[img_rs_binary_3c == 1] = 255
-    # img_bs_binary_3c[img_bs_binary_3c == 1] = 255
-    # img_bh_binary_3c[img_bh_binary_3c == 1] = 255
-    # img_hs_binary_3c[img_hs_binary_3c == 1] = 255
-    #
-    # img_rb_binary = np.zeros_like(img_binary_r)
-    # img_rb_binary[(img_binary_r == 1) | (img_binary_b == 1)] = 1
-    # img_rh_binary = np.zeros_like(img_binary_r)
-    # img_rh_binary[(img_binary_r == 1) | (img_binary_h == 1)] = 1
-    # img_rs_binary = np.zeros_like(img_binary_r)
-    # img_rs_binary[(img_binary_r == 1) | (img_binary_s == 1)] = 1
-    # img_bs_binary = np.zeros_like(img_binary_r)
-    # img_bs_binary[(img_binary_b == 1) | (img_binary_s == 1)] = 1
-    # img_bh_binary = np.zeros_like(img_binary_r)
-    # img_bh_binary[(img_binary_b == 1) | (img_binary_h == 1)] = 1
-    # img_hs_binary = np.zeros_like(img_binary_r)
-    # img_hs_binary[(img_binary_h == 1) | (img_binary_s == 1)] = 1
+    # -----------------------------------------------------------------------
+    # RGB and HLS x/y gradient thresholding
 
-    # cip.show_images(figsize=(16, 5), rows=2, fig_title='Combined Binary Images',
-    #                 images=[img_rb_binary_3c, img_rh_binary_3c, img_rs_binary_3c, img_bs_binary_3c, img_bh_binary_3c, img_hs_binary_3c,
-    #                         img_rb_binary, img_rh_binary, img_rs_binary, img_bs_binary, img_bh_binary, img_hs_binary],
-    #                 titles=['RB Binary Image', 'RH Binary Image', 'RS Binary Image', 'BS Binary Image', 'BH Binary Image', 'HS Binary Image',
-    #                         'R|B Binary Image', 'R|H Binary Image', 'R|S Binary Image', 'B|S Binary Image', 'B|H Binary Image', 'H|S Binary Image'],
-    #                 cmaps=['', '', '', '', '', '', 'gray', 'gray', 'gray', 'gray', 'gray', 'gray'])
+    # calculate x- and y-gradients with sobel filter
+    r_gradients_x = cip.gradient(r_channel, sobel_kernel=sobel_kernel_rgb, orientation='x')
+    r_gradients_y = cip.gradient(r_channel, sobel_kernel=sobel_kernel_rgb, orientation='y')
+    g_gradients_x = cip.gradient(g_channel, sobel_kernel=sobel_kernel_rgb, orientation='x')
+    g_gradients_y = cip.gradient(g_channel, sobel_kernel=sobel_kernel_rgb, orientation='y')
+    b_gradients_x = cip.gradient(b_channel, sobel_kernel=sobel_kernel_rgb, orientation='x')
+    b_gradients_y = cip.gradient(b_channel, sobel_kernel=sobel_kernel_rgb, orientation='y')
 
-    # combine binary image channels (3 channels)
-    img_rbs_binary_3c = np.dstack((img_binary_r, img_binary_b, img_binary_s))
-    img_rbs_binary_3c[img_rbs_binary_3c == 1] = 255
+    h_gradients_x = cip.gradient(h_channel, sobel_kernel=sobel_kernel_hls, orientation='x')
+    h_gradients_y = cip.gradient(h_channel, sobel_kernel=sobel_kernel_hls, orientation='y')
+    l_gradients_x = cip.gradient(l_channel, sobel_kernel=sobel_kernel_hls, orientation='x')
+    l_gradients_y = cip.gradient(l_channel, sobel_kernel=sobel_kernel_hls, orientation='y')
+    s_gradients_x = cip.gradient(s_channel, sobel_kernel=sobel_kernel_hls, orientation='x')
+    s_gradients_y = cip.gradient(s_channel, sobel_kernel=sobel_kernel_hls, orientation='y')
 
-    img_rbs_binary = np.zeros_like(img_binary_r)
-    img_rbs_binary[(img_binary_r == 1) | (img_binary_b == 1) | (img_binary_s == 1)] = 1
-    img_rb_and_s_binary = np.zeros_like(img_binary_r)
-    img_rb_and_s_binary[((img_binary_r == 1) | (img_binary_b == 1)) & (img_binary_s == 1)] = 1
-    img_r_and_s_or_b_binary = np.zeros_like(img_binary_r)
-    img_r_and_s_or_b_binary[((img_binary_r == 1) & (img_binary_s == 1)) | (img_binary_b == 1)] = 1
+    # apply gradient thresholds
+    img_binary_r_gradient_x = cip.abs_gradient_threshold(r_gradients_x, threshold=threshold_r_gradient_x)
+    img_binary_r_gradient_y = cip.abs_gradient_threshold(r_gradients_y, threshold=threshold_r_gradient_y)
+    img_binary_g_gradient_x = cip.abs_gradient_threshold(g_gradients_x, threshold=threshold_g_gradient_x)
+    img_binary_g_gradient_y = cip.abs_gradient_threshold(g_gradients_y, threshold=threshold_g_gradient_y)
+    img_binary_b_gradient_x = cip.abs_gradient_threshold(b_gradients_x, threshold=threshold_b_gradient_x)
+    img_binary_b_gradient_y = cip.abs_gradient_threshold(b_gradients_y, threshold=threshold_b_gradient_y)
+
+    img_binary_h_gradient_x = cip.abs_gradient_threshold(h_gradients_x, threshold=threshold_h_gradient_x)
+    img_binary_h_gradient_y = cip.abs_gradient_threshold(h_gradients_y, threshold=threshold_h_gradient_y)
+    img_binary_l_gradient_x = cip.abs_gradient_threshold(l_gradients_x, threshold=threshold_l_gradient_x)
+    img_binary_l_gradient_y = cip.abs_gradient_threshold(l_gradients_y, threshold=threshold_l_gradient_y)
+    img_binary_s_gradient_x = cip.abs_gradient_threshold(s_gradients_x, threshold=threshold_s_gradient_x)
+    img_binary_s_gradient_y = cip.abs_gradient_threshold(s_gradients_y, threshold=threshold_s_gradient_y)
 
     if plot_intermediate_results:
-        cip.show_images(figsize=(17, 3), rows=1, fig_title='Finally combined Binary Images',
-                        images=[img_rgb, img_rbs_binary_3c, img_rbs_binary, img_rb_and_s_binary, img_r_and_s_or_b_binary],
-                        titles=['RGB Image', 'RBS Binary Image', 'R|B|S Binary Image', '(R|B)&S Binary Image', '(R&S)&B Binary Image'],
-                        cmaps=['', '', 'gray', 'gray', 'gray'])
+        # # plot RGB gradient thresholds
+        # cip.show_images(figsize=(17, 7), rows=3, fig_title='RGB x/y-gradients',
+        #                 images=[r_channel, cip.norm_abs_gradient(r_gradients_x), img_binary_r_gradient_x, cip.norm_abs_gradient(r_gradients_y), img_binary_r_gradient_y,
+        #                         g_channel, cip.norm_abs_gradient(g_gradients_x), img_binary_g_gradient_x, cip.norm_abs_gradient(g_gradients_y), img_binary_g_gradient_y,
+        #                         b_channel, cip.norm_abs_gradient(b_gradients_x), img_binary_b_gradient_x, cip.norm_abs_gradient(b_gradients_y), img_binary_b_gradient_y],
+        #                 titles=['Red', 'x-gradient kernel={:}'.format(sobel_kernel_rgb), 'Thresholded x-gradient {:}'.format(threshold_r_gradient_x), 'y-gradient kernel={:}'.format(sobel_kernel_rgb), 'Thresholded y-gradient {:}'.format(threshold_r_gradient_y),
+        #                         'Green', 'x-gradient kernel={:}'.format(sobel_kernel_rgb), 'Thresholded x-gradient {:}'.format(threshold_g_gradient_x), 'y-gradient kernel={:}'.format(sobel_kernel_rgb), 'Thresholded y-gradient {:}'.format(threshold_g_gradient_y),
+        #                         'Blue', 'x-gradient kernel={:}'.format(sobel_kernel_rgb), 'Thresholded x-gradient {:}'.format( threshold_b_gradient_x), 'y-gradient kernel={:}'.format(sobel_kernel_rgb), 'Thresholded y-gradient {:}'.format(threshold_b_gradient_y)],
+        #                 cmaps=['gray', 'jet', 'gray', 'jet', 'gray',
+        #                        'gray', 'jet', 'gray', 'jet', 'gray',
+        #                        'gray', 'jet', 'gray', 'jet', 'gray'])
+        #
+        # # plot HLS gradient thresholds
+        # cip.show_images(figsize=(17, 7), rows=3, fig_title='HLS x/y-gradients',
+        #                 images=[h_channel, cip.norm_abs_gradient(h_gradients_x), img_binary_h_gradient_x, cip.norm_abs_gradient(h_gradients_y), img_binary_h_gradient_y,
+        #                         l_channel, cip.norm_abs_gradient(l_gradients_x), img_binary_l_gradient_x, cip.norm_abs_gradient(l_gradients_y), img_binary_l_gradient_y,
+        #                         s_channel, cip.norm_abs_gradient(s_gradients_x), img_binary_s_gradient_x, cip.norm_abs_gradient(s_gradients_y), img_binary_s_gradient_y],
+        #                 titles=['Hue', 'x-gradient kernel={:}'.format(sobel_kernel_hls), 'Thresholded x-gradient {:}'.format(threshold_h_gradient_x), 'y-gradient kernel={:}'.format(sobel_kernel_hls), 'Thresholded y-gradient {:}'.format(threshold_h_gradient_y),
+        #                         'Lightness', 'x-gradient kernel={:}'.format(sobel_kernel_hls), 'Thresholded x-gradient {:}'.format(threshold_l_gradient_x), 'y-gradient kernel={:}'.format(sobel_kernel_hls), 'Thresholded y-gradient {:}'.format(threshold_l_gradient_y),
+        #                         'Saturation', 'x-gradient kernel={:}'.format(sobel_kernel_hls), 'Thresholded x-gradient {:}'.format(threshold_s_gradient_x), 'y-gradient kernel={:}'.format(sobel_kernel_hls), 'Thresholded y-gradient {:}'.format(threshold_s_gradient_y)],
+        #                 cmaps=['gray', 'jet', 'gray', 'jet', 'gray',
+        #                        'gray', 'jet', 'gray', 'jet', 'gray',
+        #                        'gray', 'jet', 'gray', 'jet', 'gray'])
 
-    return img_r_and_s_or_b_binary
+        # plot RBS gradient thresholds
+        cip.show_images(figsize=(17, 7), rows=3, fig_title='Red, Blue and Saturation x/y-gradients',
+                        images=[r_channel, cip.norm_abs_gradient(r_gradients_x), img_binary_r_gradient_x, cip.norm_abs_gradient(r_gradients_y), img_binary_r_gradient_y,
+                                b_channel, cip.norm_abs_gradient(g_gradients_x), img_binary_g_gradient_x, cip.norm_abs_gradient(b_gradients_y), img_binary_g_gradient_y,
+                                s_channel, cip.norm_abs_gradient(s_gradients_x), img_binary_s_gradient_x, cip.norm_abs_gradient(s_gradients_y), img_binary_s_gradient_y],
+                        titles=['Red', 'x-gradient kernel={:}'.format(sobel_kernel_rgb), 'Thresholded x-gradient {:}'.format(threshold_r_gradient_x), 'y-gradient kernel={:}'.format(sobel_kernel_rgb), 'Thresholded y-gradient {:}'.format(threshold_r_gradient_y),
+                                'Blue', 'x-gradient kernel={:}'.format(sobel_kernel_rgb), 'Thresholded x-gradient {:}'.format(threshold_b_gradient_x), 'y-gradient kernel={:}'.format(sobel_kernel_rgb), 'Thresholded y-gradient {:}'.format(threshold_b_gradient_y),
+                                'Saturation', 'x-gradient kernel={:}'.format(sobel_kernel_hls), 'Thresholded x-gradient {:}'.format(threshold_s_gradient_x), 'y-gradient kernel={:}'.format(sobel_kernel_hls), 'Thresholded y-gradient {:}'.format(threshold_s_gradient_y)],
+                        cmaps=['gray', 'jet', 'gray', 'jet', 'gray',
+                               'gray', 'jet', 'gray', 'jet', 'gray',
+                               'gray', 'jet', 'gray', 'jet', 'gray'])
+
+    # -----------------------------------------------------------------------
+    # RGB and HLS magnitude thresholding
+
+    r_magnitude = cip.norm_magnitude(r_gradients_x, r_gradients_y)
+    g_magnitude = cip.norm_magnitude(g_gradients_x, g_gradients_y)
+    b_magnitude = cip.norm_magnitude(b_gradients_x, b_gradients_y)
+    h_magnitude = cip.norm_magnitude(h_gradients_x, h_gradients_y)
+    l_magnitude = cip.norm_magnitude(l_gradients_x, l_gradients_y)
+    s_magnitude = cip.norm_magnitude(s_gradients_x, s_gradients_y)
+
+    img_binary_r_magnitude = cip.magnitude_threshold(r_gradients_x, r_gradients_y, threshold=threshold_r_magnitude)
+    img_binary_g_magnitude = cip.magnitude_threshold(g_gradients_x, g_gradients_y, threshold=threshold_g_magnitude)
+    img_binary_b_magnitude = cip.magnitude_threshold(b_gradients_x, b_gradients_y, threshold=threshold_b_magnitude)
+    img_binary_h_magnitude = cip.magnitude_threshold(h_gradients_x, h_gradients_y, threshold=threshold_h_magnitude)
+    img_binary_l_magnitude = cip.magnitude_threshold(l_gradients_x, l_gradients_y, threshold=threshold_l_magnitude)
+    img_binary_s_magnitude = cip.magnitude_threshold(s_gradients_x, s_gradients_y, threshold=threshold_s_magnitude)
+
+    if plot_intermediate_results:
+        # # plot RGB magnitude thresholds
+        # cip.show_images(figsize=(15, 9), rows=3, fig_title='RGB Magnitudes',
+        #                 images=[r_channel, r_magnitude, img_binary_r_magnitude,
+        #                         g_channel, g_magnitude, img_binary_g_magnitude,
+        #                         b_channel, b_magnitude, img_binary_b_magnitude],
+        #                 titles=['Red', 'Magnitude', 'Thresholded Magnitude {:}'.format(threshold_r_magnitude),
+        #                         'Green', 'Magnitude', 'Thresholded Magnitude {:}'.format(threshold_g_magnitude),
+        #                         'Blue', 'Magnitude', 'Thresholded Magnitude {:}'.format(threshold_b_magnitude)],
+        #                 cmaps=['gray', 'jet', 'gray',
+        #                        'gray', 'jet', 'gray',
+        #                        'gray', 'jet', 'gray'])
+        #
+        # # plot HLS magnitude thresholds
+        # cip.show_images(figsize=(15, 9), rows=3, fig_title='HLS Magnitudes',
+        #                 images=[h_channel, h_magnitude, img_binary_h_magnitude,
+        #                         l_channel, l_magnitude, img_binary_l_magnitude,
+        #                         s_channel, s_magnitude, img_binary_s_magnitude],
+        #                 titles=['Hue', 'Magnitude', 'Thresholded Magnitude {:}'.format(threshold_h_magnitude),
+        #                         'Lightness', 'Magnitude', 'Thresholded Magnitude {:}'.format(threshold_l_magnitude),
+        #                         'Saturation', 'Magnitude', 'Thresholded Magnitude {:}'.format(threshold_s_magnitude)],
+        #                 cmaps=['gray', 'jet', 'gray',
+        #                        'gray', 'jet', 'gray',
+        #                        'gray', 'jet', 'gray'])
+
+        # plot RBS magnitude thresholds
+        cip.show_images(figsize=(15, 9), rows=3, fig_title='Red, Blue and Saturation Magnitudes',
+                        images=[r_channel, r_magnitude, img_binary_r_magnitude,
+                                b_channel, b_magnitude, img_binary_b_magnitude,
+                                s_channel, s_magnitude, img_binary_s_magnitude],
+                        titles=['Red', 'Magnitude', 'Thresholded Magnitude {:}'.format(threshold_r_magnitude),
+                                'Blue', 'Magnitude', 'Thresholded Magnitude {:}'.format(threshold_b_magnitude),
+                                'Saturation', 'Magnitude', 'Thresholded Magnitude {:}'.format(threshold_s_magnitude)],
+                        cmaps=['gray', 'jet', 'gray',
+                               'gray', 'jet', 'gray',
+                               'gray', 'jet', 'gray'])
+
+    # -----------------------------------------------------------------------
+    # RGB and HLS direction thresholding
+
+    r_direction = cip.direction(r_gradients_x, r_gradients_y)
+    g_direction = cip.direction(g_gradients_x, g_gradients_y)
+    b_direction = cip.direction(b_gradients_x, b_gradients_y)
+    h_direction = cip.direction(h_gradients_x, h_gradients_y)
+    l_direction = cip.direction(l_gradients_x, l_gradients_y)
+    s_direction = cip.direction(s_gradients_x, s_gradients_y)
+
+    img_binary_r_direction = cip.direction_threshold(r_gradients_x, r_gradients_y, threshold=threshold_r_direction)
+    img_binary_g_direction = cip.direction_threshold(g_gradients_x, g_gradients_y, threshold=threshold_g_direction)
+    img_binary_b_direction = cip.direction_threshold(b_gradients_x, b_gradients_y, threshold=threshold_b_direction)
+    img_binary_h_direction = cip.direction_threshold(h_gradients_x, h_gradients_y, threshold=threshold_h_direction)
+    img_binary_l_direction = cip.direction_threshold(l_gradients_x, l_gradients_y, threshold=threshold_l_direction)
+    img_binary_s_direction = cip.direction_threshold(s_gradients_x, s_gradients_y, threshold=threshold_s_direction)
+
+    if plot_intermediate_results:
+        # # plot RGB magnitude thresholds
+        # cip.show_images(figsize=(15, 9), rows=3, fig_title='RGB Directions',
+        #                 images=[r_channel, r_direction, img_binary_r_direction,
+        #                         g_channel, g_direction, img_binary_g_direction,
+        #                         b_channel, b_direction, img_binary_b_direction],
+        #                 titles=['Red', 'Direction', 'Thresholded Direction {:}'.format(threshold_r_direction),
+        #                         'Green', 'Direction', 'Thresholded Direction {:}'.format(threshold_g_direction),
+        #                         'Blue', 'Direction', 'Thresholded Direction {:}'.format(threshold_b_direction)],
+        #                 cmaps=['gray', 'jet', 'gray',
+        #                        'gray', 'jet', 'gray',
+        #                        'gray', 'jet', 'gray'])
+        #
+        # # plot HLS magnitude thresholds
+        # cip.show_images(figsize=(15, 9), rows=3, fig_title='HLS Direction',
+        #                 images=[h_channel, h_direction, img_binary_h_direction,
+        #                         l_channel, l_direction, img_binary_l_direction,
+        #                         s_channel, s_direction, img_binary_s_direction],
+        #                 titles=['Hue', 'Direction', 'Thresholded Direction {:}'.format(threshold_h_direction),
+        #                         'Lightness', 'Direction', 'Thresholded Direction {:}'.format(threshold_l_direction),
+        #                         'Saturation', 'Direction', 'Thresholded Direction {:}'.format(threshold_s_direction)],
+        #                 cmaps=['gray', 'jet', 'gray',
+        #                        'gray', 'jet', 'gray',
+        #                        'gray', 'jet', 'gray'])
+
+        # plot RBS magnitude thresholds
+        cip.show_images(figsize=(15, 9), rows=3, fig_title='Red, Blue, Saturation Directions',
+                        images=[r_channel, r_direction, img_binary_r_direction,
+                                b_channel, b_direction, img_binary_b_direction,
+                                s_channel, s_direction, img_binary_s_direction],
+                        titles=['Red', 'Direction', 'Thresholded Direction {:}'.format(threshold_r_direction),
+                                'Blue', 'Direction', 'Thresholded Direction {:}'.format(threshold_b_direction),
+                                'Saturation', 'Direction', 'Thresholded Direction {:}'.format(threshold_s_direction)],
+                        cmaps=['gray', 'jet', 'gray',
+                               'gray', 'jet', 'gray',
+                               'gray', 'jet', 'gray'])
+
+    # -----------------------------------------------------------------------
+    # sobel x/y, direction and magnitude on gray image
+
+    img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2GRAY)
+    gray_gradient_x = cip.gradient(img_gray, sobel_kernel=sobel_kernel_gray, orientation='x')
+    gray_gradient_y = cip.gradient(img_gray, sobel_kernel=sobel_kernel_gray, orientation='y')
+    gray_magnitute = cip.norm_magnitude(gray_gradient_x, gray_gradient_y)
+    gray_direction = cip.direction(gray_gradient_x, gray_gradient_y)
+
+    gray_binary_gradient_x = cip.abs_gradient_threshold(gray_gradient_x, threshold=threshold_gray_gradient_x)
+    gray_binary_gradient_y = cip.abs_gradient_threshold(gray_gradient_y, threshold=threshold_gray_gradient_y)
+    gray_binary_magnitude = cip.magnitude_threshold(gray_gradient_x, gray_gradient_y, threshold=threshold_gray_magnitude)
+    gray_binary_direction = cip.direction_threshold(gray_gradient_x, gray_gradient_y, threshold=threshold_gray_direction)
+
+    if plot_intermediate_results:
+        # plot gray filter thresholds
+        cip.show_images(figsize=(10, 9), rows=4, fig_title='Gray Filter',
+                        images=[img_gray, cip.norm_abs_gradient(gray_gradient_x), gray_binary_gradient_x,
+                                img_gray, cip.norm_abs_gradient(gray_gradient_y), gray_binary_gradient_y,
+                                img_gray, gray_magnitute, gray_binary_magnitude,
+                                img_gray, gray_direction, gray_binary_direction],
+                        titles=['Gray', 'x-gradient kernel={:}'.format(sobel_kernel_gray), 'Thresholded x-gradient {:}'.format(threshold_gray_gradient_x),
+                                'Gray', 'y-gradient kernel={:}'.format(sobel_kernel_gray), 'Thresholded y-gradient {:}'.format(threshold_gray_gradient_y),
+                                'Gray', 'Magnitude', 'Thresholded Magnitude {:}'.format(threshold_gray_magnitude),
+                                'Gray', 'Direction', 'Thresholded Direction {:}'.format(threshold_gray_direction)],
+                        cmaps=['gray', 'jet', 'gray',
+                               'gray', 'jet', 'gray',
+                               'gray', 'jet', 'gray',
+                               'gray', 'jet', 'gray'])
+
+    # -----------------------------------------------------------------------
+    # combine binary images
+
+    img_white = np.zeros_like(img_binary_r)
+    img_white[0] = 1
+
+    # color combinations
+    img_binary_rsb_3c = np.dstack((img_binary_r, img_binary_s, img_binary_b))
+    img_binary_rsb_3c[img_binary_rsb_3c == 1] = 255
+
+    img_binary_rbs = np.zeros_like(img_binary_r)
+    img_binary_rbs[(img_binary_r == 1) | (img_binary_b == 1) | (img_binary_s == 1)] = 1
+    img_binary_rb_and_s = np.zeros_like(img_binary_r)
+    img_binary_rb_and_s[((img_binary_r == 1) | (img_binary_b == 1)) & (img_binary_s == 1)] = 1
+
+    # x gradient combinations
+    img_binary_x_grad_rsb_3c = np.dstack((img_binary_r_gradient_x, img_binary_s_gradient_x, img_binary_b_gradient_x))
+    img_binary_x_grad_rsb_3c[img_binary_x_grad_rsb_3c == 1] = 255
+
+    img_binary_x_grad_rbs = np.zeros_like(img_binary_r)
+    img_binary_x_grad_rbs[(img_binary_r_gradient_x == 1) | (img_binary_b_gradient_x == 1) | (img_binary_s_gradient_x == 1)] = 1
+    img_binary_x_grad_rb_and_s = np.zeros_like(img_binary_r)
+    img_binary_x_grad_rb_and_s[((img_binary_r_gradient_x == 1) | (img_binary_b_gradient_x == 1)) & (img_binary_s_gradient_x == 1)] = 1
+
+    img_binary_rb_x_grad_grayS = np.zeros_like(img_binary_r)
+    img_binary_rb_x_grad_grayS[(img_binary_r == 1) | (img_binary_b == 1) | (gray_gradient_x == 1) | (img_binary_s_gradient_x == 1)] = 1
+
+    img_binary_x_grad_rsb_3c = np.dstack((img_binary_r_gradient_x, img_binary_s_gradient_x, img_binary_b_gradient_x))
+    img_binary_x_grad_rsb_3c[img_binary_x_grad_rsb_3c == 1] = 255
+    img_binary_x_grad_rbs = np.zeros_like(img_binary_r)
+    img_binary_x_grad_rbs[(img_binary_r_gradient_x == 1) | (img_binary_b_gradient_x == 1) | (img_binary_s_gradient_x == 1)] = 1
+
+    img_binary_rbs_and_x_grad_rbs = np.zeros_like(img_binary_r)
+    img_binary_rbs_and_x_grad_rbs[(img_binary_rbs == 1) & (img_binary_x_grad_rbs == 1)] = 1
+
+    img_binary_rbs_gray_dir_and_gray_mag = np.zeros_like(img_binary_r)
+    img_binary_rbs_gray_dir_and_gray_mag[((img_binary_rbs == 1) | (gray_direction == 1)) & (gray_magnitute == 1)] = 1
+
+    if plot_intermediate_results:
+        cip.show_images(figsize=(17, 9), rows=3, fig_title='Finally combined Binary Images',
+                        images=[img_rgb, img_binary_rsb_3c, img_binary_rbs, img_binary_rb_and_s,
+                                img_white, img_binary_x_grad_rsb_3c, img_binary_x_grad_rbs, img_binary_x_grad_rb_and_s,
+                                img_white, img_binary_rbs_and_x_grad_rbs, img_binary_rb_x_grad_grayS, img_binary_rbs_gray_dir_and_gray_mag],
+                        titles=['RGB Image', 'Binary RSB Image', 'Binary R|B|S Image', 'Binary (R|B)&S Image',
+                                '', 'Binary x-grad RSB', 'Binary x-grad R|B|S', 'Binary x-grad (R|B)&S',
+                                '', 'Binary R|B|S and x-grad R|B|S', 'Binary (R|B) & (x-grad gray|S)', '(R|B|S | gray dir) & gray mag'],
+                        cmaps=['', '', 'gray', 'gray',
+                               'gray', '', 'gray', 'gray',
+                               'gray', 'gray', 'gray', 'gray'])
+
+    return img_binary_rbs_and_x_grad_rbs
 
 
 def test_warp(img_rgb):
@@ -421,18 +659,21 @@ if __name__ == '__main__':
         print('Load image file: {:s}'.format(f))
         img_rgb.append(cv2.cvtColor(cv2.imread(f), cv2.COLOR_BGR2RGB))
 
+    # -----------------------------------------------------------------------
     # Test and optimize single images
-    # test_preprocessing_pipeline(img_rgb[0], plot_intermediate_results=True)
-    # test_preprocessing_pipeline(img_rgb[1], plot_intermediate_results=True)
-    # test_preprocessing_pipeline(img_rgb[2], plot_intermediate_results=True)
-    test_preprocessing_pipeline(img_rgb[6], plot_intermediate_results=True)
+    test_preprocessing_pipeline(img_rgb[0], plot_intermediate_results=True)
+    #test_preprocessing_pipeline(img_rgb[1], plot_intermediate_results=True)
+    #test_preprocessing_pipeline(img_rgb[2], plot_intermediate_results=True)
+    #test_preprocessing_pipeline(img_rgb[6], plot_intermediate_results=True)
     plt.show()
     exit(0)
 
-    # TODO: test warping
+    # -----------------------------------------------------------------------
+    # test warping
     # test_warp(img_rgb[0])
     # exit(0)
 
+    # -----------------------------------------------------------------------
     # Pre-process all test images
     img_preprocessed = []
     titles = []
@@ -449,123 +690,6 @@ if __name__ == '__main__':
                     images=img_preprocessed,
                     titles=titles,
                     cmaps=cmaps)
-
-    # # calculate x- and y-gradients with sobel filter
-    # r_gradients_x = cip.gradient(r_channel, sobel_kernel=sobel_kernel, orientation='x')
-    # r_gradients_y = cip.gradient(r_channel, sobel_kernel=sobel_kernel, orientation='y')
-    # g_gradients_x = cip.gradient(g_channel, sobel_kernel=sobel_kernel, orientation='x')
-    # g_gradients_y = cip.gradient(g_channel, sobel_kernel=sobel_kernel, orientation='y')
-    # b_gradients_x = cip.gradient(b_channel, sobel_kernel=sobel_kernel, orientation='x')
-    # b_gradients_y = cip.gradient(b_channel, sobel_kernel=sobel_kernel, orientation='y')
-    #
-    # h_gradients_x = cip.gradient(h_channel, sobel_kernel=sobel_kernel, orientation='x')
-    # h_gradients_y = cip.gradient(h_channel, sobel_kernel=sobel_kernel, orientation='y')
-    # l_gradients_x = cip.gradient(l_channel, sobel_kernel=sobel_kernel, orientation='x')
-    # l_gradients_y = cip.gradient(l_channel, sobel_kernel=sobel_kernel, orientation='y')
-    # s_gradients_x = cip.gradient(s_channel, sobel_kernel=sobel_kernel, orientation='x')
-    # s_gradients_y = cip.gradient(s_channel, sobel_kernel=sobel_kernel, orientation='y')
-    #
-    # # apply gradient thresholds
-    # img_binary_r_gradient_x = cip.abs_gradient_threshold(r_gradients_x, threshold=threshold_r_gradient_x)
-    # img_binary_r_gradient_y = cip.abs_gradient_threshold(r_gradients_y, threshold=threshold_r_gradient_y)
-    # img_binary_g_gradient_x = cip.abs_gradient_threshold(g_gradients_x, threshold=threshold_g_gradient_x)
-    # img_binary_g_gradient_y = cip.abs_gradient_threshold(g_gradients_y, threshold=threshold_g_gradient_y)
-    # img_binary_b_gradient_x = cip.abs_gradient_threshold(b_gradients_x, threshold=threshold_b_gradient_x)
-    # img_binary_b_gradient_y = cip.abs_gradient_threshold(b_gradients_y, threshold=threshold_b_gradient_y)
-    #
-    # img_binary_h_gradient_x = cip.abs_gradient_threshold(h_gradients_x, threshold=threshold_h_gradient_x)
-    # img_binary_h_gradient_y = cip.abs_gradient_threshold(h_gradients_y, threshold=threshold_h_gradient_y)
-    # img_binary_l_gradient_x = cip.abs_gradient_threshold(l_gradients_x, threshold=threshold_l_gradient_x)
-    # img_binary_l_gradient_y = cip.abs_gradient_threshold(l_gradients_y, threshold=threshold_l_gradient_y)
-    # img_binary_s_gradient_x = cip.abs_gradient_threshold(s_gradients_x, threshold=threshold_s_gradient_x)
-    # img_binary_s_gradient_y = cip.abs_gradient_threshold(s_gradients_y, threshold=threshold_s_gradient_y)
-
-    # plot RGB gradient thresholds
-    # cip.show_images(figsize=(16, 7), rows=2, fig_title='RGB x-gradients',
-    #                 images=[cip.norm_abs_gradient(r_gradients_x), cip.norm_abs_gradient(g_gradients_x), cip.norm_abs_gradient(b_gradients_x),
-    #                         img_binary_r_gradient_x, img_binary_g_gradient_x, img_binary_b_gradient_x],
-    #                 titles=['Red x-gradient', 'Green x-gradient', 'Blue x-gradient',
-    #                         'Thresholded Red x-gradient {:}'.format(threshold_r_gradient_x),
-    #                         'Thresholded Green x-gradient {:}'.format(threshold_g_gradient_x),
-    #                         'Thresholded Blue x-gradient {:}'.format(threshold_b_gradient_x)],
-    #                 cmaps=['jet', 'jet', 'jet', 'gray', 'gray', 'gray'])
-    #
-    # cip.show_images(figsize=(16, 7), rows=2, fig_title='RGB y-gradients',
-    #                 images=[cip.norm_abs_gradient(r_gradients_y), cip.norm_abs_gradient(g_gradients_y), cip.norm_abs_gradient(b_gradients_y),
-    #                         img_binary_r_gradient_y, img_binary_g_gradient_y, img_binary_b_gradient_y],
-    #                 titles=['Red y-gradient', 'Green y-gradient', 'Blue y-gradient',
-    #                         'Thresholded Red y-gradient {:}'.format(threshold_r_gradient_y),
-    #                         'Thresholded Green y-gradient {:}'.format(threshold_b_gradient_y),
-    #                         'Thresholded Blue y-gradient {:}'.format(threshold_b_gradient_y)],
-    #                 cmaps=['jet', 'jet', 'jet', 'gray', 'gray', 'gray'])
-    #
-    # # plot HLS gradient thresholds
-    # cip.show_images(figsize=(16, 7), rows=2, fig_title='HLS x-gradients',
-    #                 images=[cip.norm_abs_gradient(h_gradients_x), cip.norm_abs_gradient(l_gradients_x), cip.norm_abs_gradient(s_gradients_x),
-    #                         img_binary_h_gradient_x, img_binary_l_gradient_x, img_binary_s_gradient_x],
-    #                 titles=['Hue x-gradient', 'Lightness x-gradient', 'Saturation x-gradient',
-    #                         'Thresholded Hue x-gradient {:}'.format(threshold_h_gradient_x),
-    #                         'Thresholded Lightness x-gradient {:}'.format(threshold_l_gradient_x),
-    #                         'Thresholded Saturation x-gradient {:}'.format(threshold_s_gradient_x)],
-    #                 cmaps=['jet', 'jet', 'jet', 'gray', 'gray', 'gray'])
-    #
-    # cip.show_images(figsize=(16, 7), rows=2, fig_title='HLS y-gradients',
-    #                 images=[cip.norm_abs_gradient(h_gradients_y), cip.norm_abs_gradient(l_gradients_y), cip.norm_abs_gradient(s_gradients_y),
-    #                         img_binary_h_gradient_y, img_binary_l_gradient_y, img_binary_s_gradient_y],
-    #                 titles=['Hue y-gradient', 'Lightness y-gradient', 'Saturation y-gradient',
-    #                         'Thresholded Hue y-gradient {:}'.format(threshold_h_gradient_y),
-    #                         'Thresholded Lightness y-gradient {:}'.format(threshold_l_gradient_y),
-    #                         'Thresholded Saturation y-gradient {:}'.format(threshold_s_gradient_y)],
-    #                 cmaps=['jet', 'jet', 'jet', 'gray', 'gray', 'gray'])
-
-    #img_binary_magnitude = cip.magnitude_threshold(h_gradients_x, h_gradients_y, threshold=threshold_magnitude)
-    #img_binary_direction = cip.direction_threshold(h_gradients_x, h_gradients_y, threshold=threshold_direction)
-
-    #img_binary_combined = np.zeros_like(img_binary_gradient_x)
-    #img_binary_combined[((img_binary_gradient_x == 1) & (img_binary_gradient_y == 1)) |
-    #                    ((img_binary_magnitude == 1) & (img_binary_direction == 1))] = 1
-
-    # plot debug data if enabled
-    #if self.debug_threshold_methods:
-    #    self.show_image(magnitude, title='Magnitude [0..255]', cmap='jet')
-    # plot debug data if enabled
-    #if self.debug_threshold_methods:
-    #    self.show_image(angles, title='Gradient Direction (Angle) Image [0..1.5708]', cmap='jet')
-
-    #
-    # plot RGB and HLS channels
-    #
-
-    #
-    # plot gradients and thresholds
-    #
-    # fig, ax = plt.subplots(2, 4, figsize=(16, 6))
-    # fig.tight_layout()
-    #
-    # img_color_binary = np.dstack((np.zeros_like(img_binary_direction), img_binary_gradient_x, img_binary_gradient_y))
-    #
-    # ax[0][0].imshow(img_rgb)
-    # ax[0][1].imshow(img_binary_gradient_x, cmap='gray')
-    # ax[0][2].imshow(img_binary_gradient_y, cmap='gray')
-    # ax[0][3].imshow(img_color_binary)
-    # ax[0][0].set_title('Original Image')
-    # ax[0][1].set_title('Thresholded x-Gradient {:}'.format(threshold_gradient_x))
-    # ax[0][2].set_title('Thresholded y-Gradient {:}'.format(threshold_gradient_y))
-    # ax[0][3].set_title('Combined x-/y-Gradient')
-    #
-    # img_color_binary = np.dstack((np.zeros_like(img_binary_direction), img_binary_direction, img_binary_magnitude))
-    #
-    # ax[1][0].imshow(img_binary_combined, cmap='gray')
-    # ax[1][1].imshow(img_binary_magnitude, cmap='gray')
-    # ax[1][2].imshow(img_binary_direction, cmap='gray')
-    # ax[1][3].imshow(img_color_binary)
-    # ax[1][0].set_title('Combined Thresholds')
-    # ax[1][1].set_title('Thresholded Magnitude {:}'.format(threshold_magnitude))
-    # ax[1][2].set_title('Thresholded Direction ({:.3f}, {:.3f})'.format(threshold_direction[0], threshold_direction[1]))
-    # ax[1][3].set_title('Combined Magnitude/Direction')
-    #
-    # fig.suptitle('Image Pre-processing Results')
-    # plt.subplots_adjust(left=0.03, right=0.99, top=0.92, bottom=0.)
 
     plt.draw()
     plt.pause(1e-3)
