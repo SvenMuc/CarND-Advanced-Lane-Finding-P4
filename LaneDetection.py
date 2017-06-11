@@ -31,6 +31,13 @@ class LaneDetection:
     threshold_l = (150, 255)               # Threshold for L channel [0..255]
     threshold_s = (100, 255)               # Threshold for S channel [0..255]
 
+    sobel_kernel_rgb = 13                  # Sobel kernel size, odd number [3..31] for RGB image
+    threshold_r_gradient_x = (25, 170)     # Threshold for R channel x-gradients [0..255]
+    threshold_b_gradient_x = (20, 150)     # Threshold for B channel x-gradients [0..255]
+
+    sobel_kernel_hls = 15                  # Sobel kernel size, odd number [3..31] for HLS image
+    threshold_s_gradient_x = (30, 170)     # Threshold for L channel x-gradients [0..255]
+
     # -----------------------------------------------------------------------
     # Find lane lines parameters
 
@@ -133,6 +140,7 @@ class LaneDetection:
                  image (pixel range = [0..1]).
         """
         img_rgb = self.calib.undistort(img_rgb)
+        img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2GRAY)
 
         # separate RGB and HLS channels
         r_channel = img_rgb[:, :, 0]
@@ -141,15 +149,23 @@ class LaneDetection:
         img_hls = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2HLS)
         s_channel = img_hls[:, :, 2]
 
-        # threshold each channel
+        # threshold color channels
         img_binary_r = self.cip.threshold_image_channel(r_channel, self.threshold_r)
         img_binary_b = self.cip.threshold_image_channel(b_channel, self.threshold_b)
         img_binary_s = self.cip.threshold_image_channel(s_channel, self.threshold_s)
 
+        # threshold x-gradients
+        r_gradients_x = self.cip.gradient(r_channel, sobel_kernel=self.sobel_kernel_rgb, orientation='x')
+        b_gradients_x = self.cip.gradient(b_channel, sobel_kernel=self.sobel_kernel_rgb, orientation='x')
+        s_gradients_x = self.cip.gradient(s_channel, sobel_kernel=self.sobel_kernel_hls, orientation='x')
+        img_binary_r_gradients_x = self.cip.abs_gradient_threshold(r_gradients_x, threshold=self.threshold_r_gradient_x)
+        img_binary_b_gradients_x = self.cip.abs_gradient_threshold(b_gradients_x, threshold=self.threshold_b_gradient_x)
+        img_binary_s_gradients_x = self.cip.abs_gradient_threshold(s_gradients_x, threshold=self.threshold_s_gradient_x)
+
         # combine binary images
         img_binary_combined = np.zeros_like(img_binary_r)
-        # TODO: img_binary_combined[((img_binary_r == 1) & (img_binary_s == 1)) | (img_binary_b == 1)] = 1
-        img_binary_combined[(img_binary_r == 1) | (img_binary_s == 1) | (img_binary_b == 1)] = 1
+        img_binary_combined[((img_binary_r == 1) | (img_binary_s == 1) | (img_binary_b == 1)) &
+                            ((img_binary_r_gradients_x == 1) | (img_binary_b_gradients_x == 1) | (img_binary_s_gradients_x == 1))] = 1
 
         if self.debug_preprocessing:
             self.cip.show_image(img_binary_combined, title='Pre-processing Result', cmap='gray')
@@ -337,7 +353,6 @@ class LaneDetection:
         :return: tbd.
         """
 
-        # -----------------------------------------------------------------------
         #  pre-process image and warp to birds-eye-view
         self.img_rgb = img_rgb
         self.img_binary = self.preprocess_image(img_rgb)
@@ -347,9 +362,7 @@ class LaneDetection:
         # create an overlay image to draw detected ego lane lines and visualize debug information
         self.img_line_search = np.dstack((self.img_binary_warped, self.img_binary_warped, self.img_binary_warped)) * 255
 
-        # -----------------------------------------------------------------------
         # detect ego lane lines
-
         margin = 100
 
         if not self.detected:
@@ -465,7 +478,7 @@ if __name__ == '__main__':
     ld.debug_preprocessing = False
     ld.debug_fine_lane_lines = False
 
-    use_video_file = False
+    use_video_file = True
 
     if not use_video_file:
         # use test images
