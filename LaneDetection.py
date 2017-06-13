@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import sys
+import os
 import matplotlib
 matplotlib.use('macosx', force=True)
 #matplotlib.use('TKAgg', force=True)
@@ -106,6 +107,7 @@ class LaneDetection:
     img_binary = np.zeros((720, 1280), dtype=np.uint8)          # pre-processing output binary image
     img_binary_warped = np.zeros((720, 1280), dtype=np.uint8)   # warped pre-pre-processing output binary image (birds-eye-view)
     img_line_search = np.zeros((720, 1280, 3), dtype=np.uint8)  # debug overlay for line detection algorithms
+    img_rgb_overlay = np.zeros((720, 1280, 3), dtype=np.uint8)  # input RGB image with all overlays
 
     img_binary_rlsb_3c = np.zeros((720, 1280, 3), dtype=np.uint8)       # colored RSB binary image
     img_binary_x_grad_rb_3c = np.zeros((720, 1280, 3), dtype=np.uint8)  # colored RSB x-gradient binary image
@@ -134,33 +136,33 @@ class LaneDetection:
     def update_debug_plots(self):
         """ Updates the debug plots with latest pipeline results. """
 
-        img_rgb_overlay = self.img_rgb.copy()
+        self.img_rgb_overlay = self.img_rgb.copy()
 
         img = cv2.resize(self.img_binary_rlsb_3c, (320, 180))
-        img_rgb_overlay[10:190, 10:330, :] = img
+        self.img_rgb_overlay[10:190, 10:330, :] = img
 
         img = cv2.resize(self.img_binary_x_grad_rb_3c, (320, 180))
-        img_rgb_overlay[10:190, 340:660, :] = img
+        self.img_rgb_overlay[10:190, 340:660, :] = img
 
         img = cv2.resize(self.img_binary_mag_rb_3c, (320, 180))
-        img_rgb_overlay[10:190, 670:990, :] = img
+        self.img_rgb_overlay[10:190, 670:990, :] = img
 
         img = cv2.resize(cv2.cvtColor(self.img_binary, cv2.COLOR_GRAY2RGB), (320, 180))
-        img_rgb_overlay[200:380, 10:330, :] = img * 255
+        self.img_rgb_overlay[200:380, 10:330, :] = img * 255
 
         img = cv2.resize(self.img_line_search, (320, 180))
-        img_rgb_overlay[200:380, 340:660, :] = img
+        self.img_rgb_overlay[200:380, 340:660, :] = img
 
         # TODO: img_rgb_overlay[200:380, 670:990, :] = img
 
-        cv2.putText(img_rgb_overlay, 'R(LS)B color', (12, 24), cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 0, 255), 1)
-        cv2.putText(img_rgb_overlay, 'RB x-grad', (342, 24), cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255), 1)
-        cv2.putText(img_rgb_overlay, 'RB Magnitude', (672, 24), cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255), 1)
-        cv2.putText(img_rgb_overlay, 'Thresholded', (12, 214), cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 0, 255), 1)
-        cv2.putText(img_rgb_overlay, 'Warped', (342, 214), cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255), 1)
-        # TODO: cv2.putText(img_rgb_overlay, 'Warped', (672, 214), cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 0), 1)
+        cv2.putText(self.img_rgb_overlay, 'R(LS)B color', (12, 24), cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 0, 0), 1)
+        cv2.putText(self.img_rgb_overlay, 'RB x-grad', (342, 24), cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255), 1)
+        cv2.putText(self.img_rgb_overlay, 'RB Magnitude', (672, 24), cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255), 1)
+        cv2.putText(self.img_rgb_overlay, 'Thresholded', (12, 214), cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 0, 0), 1)
+        cv2.putText(self.img_rgb_overlay, 'Warped', (342, 214), cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255), 1)
+        # TODO: cv2.putText(self.img_rgb_overlay, 'Warped', (672, 214), cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 0), 1)
 
-        self.debug_plot[0].set_data(img_rgb_overlay)
+        self.debug_plot[0].set_data(self.img_rgb_overlay)
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
@@ -371,17 +373,11 @@ class LaneDetection:
         left_line_fit = self.fit_line(left_x, left_y, degree=2, coordinate_space='image')
         right_line_fit = self.fit_line(right_x, right_y, degree=2, coordinate_space='image')
 
-        # generate x and y values for plotting
-        # f(y) = A * y^2 + B * y + C
-        line_fit_y = np.linspace(0, self.img_binary_warped.shape[0] - 1, self.img_binary_warped.shape[0])
-        line_fit_left_x = left_line_fit[0] * line_fit_y**2 + left_line_fit[1] * line_fit_y + left_line_fit[2]
-        line_fit_right_x = right_line_fit[0] * line_fit_y**2 + right_line_fit[1] * line_fit_y + right_line_fit[2]
-
         # color lane marker pixels used by the polynomial fit (left = red, right = blue)
         self.img_line_search[nonzero_y[left_idx], nonzero_x[left_idx]] = [255, 0, 0]
         self.img_line_search[nonzero_y[right_idx], nonzero_x[right_idx]] = [0, 0, 255]
 
-        return left_line_fit, right_line_fit, line_fit_y, line_fit_left_x, line_fit_right_x
+        return left_line_fit, right_line_fit
 
     def find_lines_around_previous_lines(self, margin=100):
         """ Finds and associates pixels for the left and right ego lane line within an area around the detected line
@@ -413,24 +409,18 @@ class LaneDetection:
         left_line_fit = self.fit_line(left_x, left_y, degree=2, coordinate_space='image')
         right_line_fit = self.fit_line(right_x, right_y, degree=2, coordinate_space='image')
 
-        # generate x and y values for plotting
-        # f(y) = A * y^2 + B * y + C
-        line_fit_y = np.linspace(0, self.img_binary_warped.shape[0] - 1, self.img_binary_warped.shape[0])
-        line_fit_left_x = left_line_fit[0] * line_fit_y**2 + left_line_fit[1] * line_fit_y + left_line_fit[2]
-        line_fit_right_x = right_line_fit[0] * line_fit_y**2 + right_line_fit[1] * line_fit_y + right_line_fit[2]
-
         # color lane marker pixels used by the polynomial fit (left = red, right = blue)
         self.img_line_search[nonzero_y[left_idx], nonzero_x[left_idx]] = [255, 0, 0]
         self.img_line_search[nonzero_y[right_idx], nonzero_x[right_idx]] = [0, 0, 255]
 
-        return left_line_fit, right_line_fit, line_fit_y, line_fit_left_x, line_fit_right_x
+        return left_line_fit, right_line_fit
 
     def detect_ego_lane(self, img_rgb):
         """ Detects the ego lane.
 
         :param img_rgb:  Input RGB image (original image)
 
-        :return: tbd.
+        :return: Returns the displayed RGB image with overlays.
         """
 
         #  pre-process image and warp to birds-eye-view
@@ -447,23 +437,27 @@ class LaneDetection:
 
         if self.mode == Mode.NO_DETECTION or self.prediction_count >= self.max_prediction_cycles:
             # no ego lane boundaries detected, search initial ones by sliding window histogram search
-            left_line_fit, right_line_fit, line_fit_y, \
-            line_fit_left_x, line_fit_right_x = self.find_lines_with_sliding_window_histogram(nb_windows=9,
-                                                                                              margin=100,
-                                                                                              min_pixels=50)
+            left_line_fit, right_line_fit = self.find_lines_with_sliding_window_histogram(nb_windows=9,
+                                                                                          margin=100,
+                                                                                          min_pixels=50)
             self.mode = Mode.NEW_LINE
             self.prediction_count = 0
         else:
             # already detected ego lane boundaries in previous frame, search around previous polynomials
-            left_line_fit, right_line_fit, line_fit_y, \
-            line_fit_left_x, line_fit_right_x = self.find_lines_around_previous_lines(margin=margin)
+            left_line_fit, right_line_fit = self.find_lines_around_previous_lines(margin=margin)
 
-            # TODO: average line fits (alphe = weight of previous line fit)
-            #alpha = 0.5
-            #left_line_fit = left_line_fit * (1 - alpha) + alpha * self.prev_left_line_fit
-            #right_line_fit = right_line_fit * (1 - alpha) + alpha * self.prev_right_line_fitq
+            # average line fits (alpha = weight of previous line fit)
+            alpha = 0.5
+            left_line_fit = left_line_fit * (1 - alpha) + alpha * self.prev_left_line_fit
+            right_line_fit = right_line_fit * (1 - alpha) + alpha * self.prev_right_line_fit
 
             self.mode = Mode.DETECTED
+
+        # generate x and y values for plotting
+        # f(y) = A * y^2 + B * y + C
+        line_fit_y = np.linspace(0, self.img_binary_warped.shape[0] - 1, self.img_binary_warped.shape[0])
+        line_fit_left_x = left_line_fit[0] * line_fit_y**2 + left_line_fit[1] * line_fit_y + left_line_fit[2]
+        line_fit_right_x = right_line_fit[0] * line_fit_y**2 + right_line_fit[1] * line_fit_y + right_line_fit[2]
 
         # calculate curve radius in world space
         left_curve_radius = self.calc_curve_radius(line_fit_left_x, line_fit_y, np.max(line_fit_y), degree=2)
@@ -485,7 +479,7 @@ class LaneDetection:
 
         if self.mode == Mode.DETECTED or self.mode == Mode.PREDICTED:
             # sanity check for lateral jumps
-            d_jump = 0.25                                        # max lateral jump [m]
+            d_jump = 0.35                                        # max lateral jump [m]
             delta_d_left = abs(abs(d_left) - abs(self.prev_d_left))
             delta_d_right = abs(abs(d_right) - abs(self.prev_d_right))
 
@@ -516,14 +510,14 @@ class LaneDetection:
         font_color = (0, 255, 255)
         font_scale = 0.5
         font_thickness = 1
-        cv2.putText(self.img_rgb, 'left radius:    {:.2f} m'.format(left_curve_radius), (1000, 25), font, font_scale, font_color, font_thickness)
-        cv2.putText(self.img_rgb, 'right radius:   {:.2f} m'.format(right_curve_radius), (1000, 40), font, font_scale, font_color, font_thickness)
-        cv2.putText(self.img_rgb, 'delta radius:   {:.2f} m'.format(left_curve_radius - right_curve_radius), (1000, 55), font, font_scale, font_color, font_thickness)
+        cv2.putText(self.img_rgb, 'left radius:      {:.2f} m'.format(left_curve_radius), (1000, 25), font, font_scale, font_color, font_thickness)
+        cv2.putText(self.img_rgb, 'right radius:     {:.2f} m'.format(right_curve_radius), (1000, 40), font, font_scale, font_color, font_thickness)
+        cv2.putText(self.img_rgb, 'delta radius:     {:.2f} m'.format(left_curve_radius - right_curve_radius), (1000, 55), font, font_scale, font_color, font_thickness)
         cv2.putText(self.img_rgb, 'avg L/R radius: {:.2f} m'.format(avg_curve_radius), (1000, 70), font, font_scale, font_color, font_thickness)
-        cv2.putText(self.img_rgb, 'lane width:     {:.2f} m'.format(lane_width), (1000, 85), font, font_scale, font_color, font_thickness)
-        cv2.putText(self.img_rgb, 'offset center:  {:.2f} m'.format(d_offset_center), (1000, 100), font, font_scale, font_color, font_thickness)
-        cv2.putText(self.img_rgb, 'dist left:      {:.2f} m'.format(d_left), (1000, 115), font, font_scale, font_color, font_thickness)
-        cv2.putText(self.img_rgb, 'dist right:     {:.2f} m'.format(d_right), (1000, 130), font, font_scale, font_color, font_thickness)
+        cv2.putText(self.img_rgb, 'lane width:      {:.2f} m'.format(lane_width), (1000, 85), font, font_scale, font_color, font_thickness)
+        cv2.putText(self.img_rgb, 'offset center:    {:.2f} m'.format(d_offset_center), (1000, 100), font, font_scale, font_color, font_thickness)
+        cv2.putText(self.img_rgb, 'dist left:         {:.2f} m'.format(d_left), (1000, 115), font, font_scale, font_color, font_thickness)
+        cv2.putText(self.img_rgb, 'dist right:        {:.2f} m'.format(d_right), (1000, 130), font, font_scale, font_color, font_thickness)
 
         if self.mode == Mode.NO_DETECTION:
             font_color = (255, 0, 0)
@@ -538,7 +532,7 @@ class LaneDetection:
 
         if self.mode == Mode.DETECTED or self.mode == Mode.PREDICTED:
             font_color = (255, 0, 0) if sanity_check_lat_jump_failed else (0, 255, 0)
-            cv2.putText(self.img_rgb, 'Sanity lat jump: {:.2f} {:.2f}'.format(delta_d_left, delta_d_right), (1000, 175), font, font_scale, font_color, font_thickness)
+            cv2.putText(self.img_rgb, 'Sanity lat jump:  {:.2f} {:.2f}'.format(delta_d_left, delta_d_right), (1000, 175), font, font_scale, font_color, font_thickness)
 
         # -----------------------------------------------------------------------
         # prepare overlay and debug plots
@@ -609,6 +603,8 @@ class LaneDetection:
         self.prev_d_left = d_left
         self.prev_d_right = d_right
 
+        return self.img_rgb_overlay
+
 def keyboard_thread():
     """ Keyboard input thread. """
 
@@ -659,19 +655,52 @@ def keyboard_thread():
             print('Frame index: {:d}'.format(idx))
 
 if __name__ == '__main__':
-    print('Advanced Lane Lines')
+    parser = argparse.ArgumentParser(description='Advanced Lane Lines')
 
+    parser.add_argument(
+        '-i', '--input',
+        help='Input video file.',
+        dest='input_video',
+        metavar='VIDEO_FILE'
+    )
+    parser.add_argument(
+        '-o', '--output',
+        help='Write images to given directory.',
+        dest='output_dir',
+        metavar='DIRECTORY'
+    )
+
+    args = parser.parse_args()
+
+    if len(sys.argv) == 1:
+        # no arguments found
+        parser.print_usage()
+        parser.exit(0)
+
+    if args.output_dir:
+        # check for valid output path
+        if os.path.exists(args.output_dir):
+            output_dir = args.output_dir
+        else:
+            print('ERROR: Output directory does not exists.')
+            exit(-1)
+
+    if args.input_video:
+        # load video file
+        if os.path.exists(args.input_video):
+            print('Extracting images from video file...', end='', flush=True)
+            images = CoreImageProcessing.load_video(args.input_video)
+            print('done')
+        else:
+            print('ERROR: Video file {:s} not found.'.format(args.input_video))
+            exit(-1)
+
+    # run lane detection processing pipeling
     ld = LaneDetection('calib.dat')
     ld.debug_preprocessing = False
 
     click_enabled = True
     running = True
-
-    print('Extracting images from video file...', end='', flush=True)
-    images = CoreImageProcessing.load_video('project_video.mp4')
-    #images = CoreImageProcessing.load_video('challenge_video.mp4')
-    #images = CoreImageProcessing.load_video('harder_challenge_video.mp4')
-    print('done')
 
     start = 0
     end = len(images) - 1
@@ -689,9 +718,14 @@ if __name__ == '__main__':
             break
 
         if not paused or step_one_frame:
-            ld.detect_ego_lane(images[idx])
+            img_ld = ld.detect_ego_lane(images[idx])
             idx += 1
             step_one_frame = False
+
+        if args.output_dir:
+            filename = output_dir + '/frame_{:04d}.png'.format(idx)
+            print('Writing image {:s}'.format(filename))
+            cv2.imwrite(filename, cv2.cvtColor(img_ld, cv2.COLOR_RGB2BGR))
 
         plt.pause(0.0000001)
 
