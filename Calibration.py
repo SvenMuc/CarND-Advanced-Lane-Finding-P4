@@ -66,7 +66,7 @@ class Calibration(object):
 
                 img_corners = cv2.drawChessboardCorners(img_rgb, nb_corners, corners, ret)
                 cv2.imshow(file, img_corners)
-                cv2.waitKey(100)
+                cv2.waitKey(0)
             else:
                 print('ERROR: Found no chessboard corners {:} on image {:s}'.format(nb_corners, file), file=sys.stderr)
 
@@ -162,11 +162,11 @@ class Calibration(object):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Camera calibration')
+    parser = argparse.ArgumentParser(description='Camera Calibration')
 
     parser.add_argument(
         '-c', '--calibrate',
-        help='Calibrates the camera with chessboard images.',
+        help='Calibrates the camera with chessboard images in PATH.',
         dest='calib_files',
         metavar='PATH'
     )
@@ -180,7 +180,7 @@ if __name__ == '__main__':
 
     parser.add_argument(
         '-t', '--test-undistort',
-        help='Undistort test images',
+        help='Undistort test image with calibration dat file.',
         dest='load_dat_file',
         metavar='DAT_FILE'
     )
@@ -209,16 +209,16 @@ if __name__ == '__main__':
         # Test calibration
         calib = Calibration(args.load_dat_file)
         img_rgb_1 = cv2.cvtColor(cv2.imread('camera_cal/calibration1.jpg'), cv2.COLOR_BGR2RGB)
-        img_rgb_2 = cv2.cvtColor(cv2.imread('test_images/straight_lines1.jpg'), cv2.COLOR_BGR2RGB)
+        img_rgb_2 = cv2.cvtColor(cv2.imread('test_images/straight_lines2.jpg'), cv2.COLOR_BGR2RGB)
 
         fig, ax = plt.subplots(2, 2, figsize=(11, 6))
         plt.subplots_adjust(left=0.03, right=0.99, top=0.92, bottom=0.05)
         ax[0][0].imshow(img_rgb_1)
         ax[0][0].set_title('Distorted Image')
-        ax[1][0].imshow(calib.undistort(img_rgb_1))
-        ax[1][0].set_title('Undistorted Image')
-        ax[0][1].imshow(img_rgb_2)
-        ax[0][1].set_title('Distorted Image')
+        ax[1][0].imshow(img_rgb_2)
+        ax[1][0].set_title('Distorted Image')
+        ax[0][1].imshow(calib.undistort(img_rgb_1))
+        ax[0][1].set_title('Undistorted Image')
         ax[1][1].imshow(calib.undistort(img_rgb_2))
         ax[1][1].set_title('Undistorted Image')
         plt.show()
