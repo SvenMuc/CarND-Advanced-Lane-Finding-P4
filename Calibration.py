@@ -66,7 +66,7 @@ class Calibration(object):
 
                 img_corners = cv2.drawChessboardCorners(img_rgb, nb_corners, corners, ret)
                 cv2.imshow(file, img_corners)
-                cv2.waitKey(0)
+                cv2.waitKey(100)
             else:
                 print('ERROR: Found no chessboard corners {:} on image {:s}'.format(nb_corners, file), file=sys.stderr)
 
