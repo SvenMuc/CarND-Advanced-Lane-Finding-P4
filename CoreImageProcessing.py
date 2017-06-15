@@ -10,7 +10,7 @@ from Calibration import *
 
 
 class CoreImageProcessing:
-    """ Provides core image processing methods likes gradient calculation, gradient, direction, magnitude
+    """ Provides core image processing methods likes gradient calculation, gradient direction, magnitude
     thresholds, etc. """
 
     def __init__(self):
