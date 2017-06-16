@@ -739,13 +739,13 @@ if __name__ == '__main__':
                  'test_images/test4.jpg',
                  'test_images/test5.jpg',
                  'test_images/test6.jpg',
-                 'frame_0544.jpg',
-                 'frame_0551.jpg',
-                 'frame_0569.jpg',
-                 'frame_0576.jpg',
-                 'frame_1038.jpg',
-                 'frame_1040.jpg',
-                 'frame_1046.jpg']
+                 'test_images/frame_0544.jpg',
+                 'test_images/frame_0551.jpg',
+                 'test_images/frame_0569.jpg',
+                 'test_images/frame_0576.jpg',
+                 'test_images/frame_1038.jpg',
+                 'test_images/frame_1040.jpg',
+                 'test_images/frame_1046.jpg']
 
     img_rgb = []
 
@@ -757,10 +757,10 @@ if __name__ == '__main__':
     # Test and optimize single images
     #test_preprocessing_pipeline(img_rgb[0], plot_intermediate_results=True)    # best case (black ground yellow/white)
     #test_preprocessing_pipeline(img_rgb[1], plot_intermediate_results=True)    # best case (black ground white)
-    #test_preprocessing_pipeline(img_rgb[2], plot_intermediate_results=True)    # critical for R/B channel threshold
+    test_preprocessing_pipeline(img_rgb[2], plot_intermediate_results=True)    # critical for R/B channel threshold
     #test_preprocessing_pipeline(img_rgb[3], plot_intermediate_results=True)
     #test_preprocessing_pipeline(img_rgb[4], plot_intermediate_results=True)
-    test_preprocessing_pipeline(img_rgb[5], plot_intermediate_results=True)    # critical for R channel threshold
+    #test_preprocessing_pipeline(img_rgb[5], plot_intermediate_results=True)    # critical for R channel threshold
     #test_preprocessing_pipeline(img_rgb[6], plot_intermediate_results=True)    # critical for R/S channel threshold
     #test_preprocessing_pipeline(img_rgb[8], plot_intermediate_results=True)    # critical for R channel threshold
     #test_preprocessing_pipeline(img_rgb[9], plot_intermediate_results=True)    # critical for R channel threshold
