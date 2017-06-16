@@ -103,7 +103,7 @@ The whole pipeline is implemented and controlled by the method [`detect_ego_lane
 6. Sanity checks to avoid outliers
 
 ### 4.1 Pre-Processing Pipeline
-The task of the image pre-processing pipeline is to provide a binary image in which pavement marker candidates are represented by an "1" and non relevant areas by a "0". The graph below describes all steps performed in the [`preprocess_image(self, image)`](https://github.com/SvenMuc/CarND-Advaned-Lane-Finding-P4/blob/master/LaneDetection.py#L169) method.
+The task of the image pre-processing pipeline is to provide a binary image in which pavement marker candidates are represented by an "1" and non relevant areas by a "0". The graph below describes all steps performed in the [`preprocess_image(self, image)`](https://github.com/SvenMuc/CarND-Advaned-Lane-Finding-P4/blob/master/LaneDetection.py#L164) method.
 
 ![pre-processing pipeline][image_preprocessing_pipeline]
 
@@ -131,11 +131,11 @@ In cast shadow scenarios the red and blue channels are not sufficient for a stab
 
 To find the best thresholds for the red channel was a bit tricky. On bright concrete the channel tends to "bleed out" (as depicted in the right image in the figure below). If I increase the threshold it works well on bright concrete but delivers less information under normal conditions. Therefore, I introduced an adaptive threshold for the red color channel. The algorithm calculates the percentage of the activations ("1") in the roadway area of the thresholded binary image. Base on the result I chose between three threshold sets as explained in the table below.
 
-| Threshold | Percentage |Range      | Description                                        |
-|:----------|:|:-----------|:---------------------------------------------------|
-| T0        | 0.032|(190, 255) | Useful for yellow lines on dark surfaces           |
-| T1        | 0.04|(210, 255) | Suppress bleeding effects on bright concrete       |
-| T2        | 0.1|(230, 255) | Extreme suppression of bleeding on bright concrete |
+| Threshold | Percentage | Range      | Description                                        |
+|:----------|:-----------|:-----------|:---------------------------------------------------|
+| T0        | 0.032      | (190, 255) | Useful for yellow lines on dark surfaces           |
+| T1        | 0.04       | (210, 255) | Suppress bleeding effects on bright concrete       |
+| T2        | 0.1        | (230, 255) | Extreme suppression of bleeding on bright concrete |
 
 ![pre-processing red bleeding][image_preprocessing_red_bleeding]
 
@@ -205,7 +205,7 @@ def calc_curve_radius(self, x, y, yr, degree=2,):
   line_fit_w = self.fit_line(x, y, degree=2, coordinate_space='world')
   return ((1 + (2 * line_fit_w[0] * yr * self.ym_per_pix + line_fit_w[1])**2)**1.5) / np.absolute(2 * line_fit_w[0])
 ```
-The whole code can be found in the [LaneDetection.py (line 456-473)](https://github.com/SvenMuc/CarND-Advaned-Lane-Finding-P4/blob/master/LaneDetection.py#L456-L473) file. In adition to the curve radius I also calculate the lane width (`lane_width`), the vehicle's offset from the center line (`d_offset_center`) and the distance to left (`d_left`) and right (`d_right`) lane markings as stated below.
+The whole code can be found in the [LaneDetection.py (line 451-468)](https://github.com/SvenMuc/CarND-Advaned-Lane-Finding-P4/blob/master/LaneDetection.py#L456-L473) file. In adition to the curve radius I also calculate the lane width (`lane_width`), the vehicle's offset from the center line (`d_offset_center`) and the distance to left (`d_left`) and right (`d_right`) lane markings as stated below.
 
 ```python
 # calculate lane width, center offset and distance to left/right ego lane boundary
@@ -224,12 +224,16 @@ The image below shows the `detect_ego_lane()` input image with all activated deb
 
 ## 6. Pipeline Video
 
-You-Tube [Link](https://youtu.be/XcHFmWkVquE)
-
 Video on [GitHub](./project_video_with_lane_detection.mp4)
+
+YouTube Video
+
+[![Link](https://img.youtube.com/vi/XcHFmWkVquE/0.jpg)](https://www.youtube.com/watch?v=XcHFmWkVquE)
 
 ## 7. Discussion
 
 The color thresholds are very sensitive to environmental conditions like sun, rain, day and night. The currently chosen thresholds won't work e.g. during night. One solution could be a measurement method to calculate the optimal thresholds online (similar to the method I implemented for the red channel).
 
-Furthermore, the lane-line pixel identification is not the optimal solution. Especially on the challenge videos this method frequently produces false positives. To solve this issue you either need more complex algorithms analyzing the lane marker characteristics followed by a couple of sanity checks or completely new methods which has some knowledge about the semantics of the individual pixels. First approaches with CNNs are described e.g in this paper ["An Empirical Evaluation of Deep Learning on Highway Driving"](https://arxiv.org/pdf/1504.01716.pdf) from the Stanford University.
+Furthermore, I'd like to implement a ego lane tracker to stabilize the detected lane-lines. Unfortunately, the Udacity dataset does not include any vehicle odometry data like speed, yaw rate, etc. Therefore, I just implemented an simple filter to stabilize the lane-lines between to consecutive frames.
+
+Finally, the lane-line pixel identification is not the optimal solution. Especially on the challenge videos this method frequently produces false positives. To solve this issue you either need more complex algorithms analyzing the lane marker characteristics followed by a couple of sanity checks or completely new methods which has some knowledge about the semantics of the individual pixels. First approaches with CNNs are described e.g in this paper ["An Empirical Evaluation of Deep Learning on Highway Driving"](https://arxiv.org/pdf/1504.01716.pdf) from the Stanford University.
