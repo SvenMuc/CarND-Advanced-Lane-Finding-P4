@@ -39,14 +39,12 @@ class LaneDetection:
     threshold_r_sum_0 = 0.032              # hyteresis 0: percentage of red proportion (<= threshold_r_0, > threshold_r_1)
     threshold_r_sum_1 = 0.04               # hyteresis 1: percentage of red proportion (<= threshold_r_0, > threshold_r_1)
     threshold_r_sum_2 = 0.1                # hyteresis 2: percentage of red proportion (<= threshold_r_1, > threshold_r_2)
-    threshold_r_0 = (190, 255)             # Threshold 0 for R channel [0..255] (usefull for yellow lines on dark surfaces)
+    threshold_r_0 = (190, 255)             # Threshold 0 for R channel [0..255] (useful for yellow lines on dark surfaces)
     threshold_r_1 = (210, 255)             # Threshold 1 for R channel [0..255] (suppress bleeding on bright concrete)
-    threshold_r_2 = (230, 255)             # Threshold 2 for R channel [0..255] (extremly suppress bleeding on bright concrete)
-    threshold_g = (170, 255)               # Threshold for G channel [0..255]
+    threshold_r_2 = (230, 255)             # Threshold 2 for R channel [0..255] (extreme suppression of bleeding on bright concrete)
     threshold_b = (185, 255)               # Threshold for B channel [0..255]
 
     # HLS channel thresholds
-    threshold_h = (18, 25)                 # Threshold for H channel [0..179]
     threshold_l = (135, 255)               # Threshold for L channel [0..255]
     threshold_s = (100, 255)               # Threshold for S channel [0..255]
 
@@ -54,9 +52,6 @@ class LaneDetection:
     sobel_kernel_rgb = 13                  # Sobel kernel size, odd number [3..31] for RGB image
     threshold_r_gradient_x = (30, 170)     # Threshold for R channel x-gradients [0..255]
     threshold_b_gradient_x = (35, 150)     # Threshold for B channel x-gradients [0..255]
-
-    sobel_kernel_hls = 15                  # Sobel kernel size, odd number [3..31] for HLS image
-    threshold_s_gradient_x = (30, 170)     # Threshold for L channel x-gradients [0..255]
 
     # magnitude thresholds
     threshold_r_magnitude = (70, 200)      # Threshold for R channel magnitude of x-/y-gradients [0..255]
@@ -171,7 +166,7 @@ class LaneDetection:
 
         Pipeline:
          - undistort RGB image
-         - extract R, B and S channels
+         - extract R, B, L and S channels
          - threshold each channel and create binary images
          - merge binary images
 
@@ -235,7 +230,7 @@ class LaneDetection:
         img_binary_r_magnitude = self.cip.magnitude_threshold(r_gradients_x, r_gradients_y, threshold=self.threshold_r_magnitude)
         img_binary_b_magnitude = self.cip.magnitude_threshold(b_gradients_x, b_gradients_y, threshold=self.threshold_b_magnitude)
 
-        # debug images (colored RSB bindary images)
+        # debug images (colored RLSB bindary images)
         self.img_binary_rlsb_3c = np.dstack((img_binary_r, img_binary_ls, img_binary_b))
         self.img_binary_rlsb_3c[self.img_binary_rlsb_3c == 1] = 255
         self.img_binary_x_grad_rb_3c = np.dstack((img_binary_r_gradients_x, np.zeros_like(img_binary_r), img_binary_b_gradients_x))
